@@ -476,6 +476,148 @@ body {
 /* ==================== SCREEN: SPIELFELD ==================== */
 #screenGame {
   justify-content: space-between;
+  position: relative;
+}
+
+/* LEVEL & FORTSCHRITT STATUS-LEISTE */
+.level-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 6px 12px;
+  margin-bottom: 8px;
+}
+
+.level-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 229, 255, 0.12);
+  border: 1px solid var(--accent-cyan);
+  border-radius: 20px;
+  padding: 4px 10px;
+}
+
+.level-nr {
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: var(--accent-cyan);
+  background: rgba(0, 229, 255, 0.25);
+  padding: 2px 6px;
+  border-radius: 10px;
+  letter-spacing: 0.5px;
+}
+
+.level-name {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.level-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.level-dots {
+  display: flex;
+  gap: 5px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dot.filled {
+  background: var(--accent-yellow);
+  border-color: var(--accent-yellow);
+  box-shadow: 0 0 8px var(--accent-yellow);
+  transform: scale(1.15);
+}
+
+.level-hint {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+/* ==================== LEVEL UP POPUP OVERLAY ==================== */
+.levelup-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 15, 30, 0.88);
+  backdrop-filter: blur(8px);
+  z-index: 150;
+  border-radius: var(--radius-lg);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.levelup-overlay.active {
+  display: flex;
+  animation: levelUpPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes levelUpPop {
+  from { opacity: 0; transform: scale(0.65); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.levelup-box {
+  background: linear-gradient(135deg, rgba(22, 30, 52, 0.95), rgba(15, 23, 42, 0.98));
+  border: 3px solid var(--accent-yellow);
+  box-shadow: 0 0 35px rgba(255, 183, 3, 0.45), 0 10px 40px rgba(0, 0, 0, 0.8);
+  border-radius: var(--radius-lg);
+  padding: 30px 24px;
+  text-align: center;
+  max-width: 380px;
+  width: 100%;
+}
+
+.levelup-sparkle {
+  font-size: 3.5rem;
+  animation: pulse 1s infinite alternate;
+  filter: drop-shadow(0 0 16px #ffb703);
+  margin-bottom: 4px;
+}
+
+.levelup-box h2 {
+  font-size: 2.4rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #ffb703, #00e5ff, #f72585);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+}
+
+.levelup-rank {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 8px 14px;
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+.levelup-speed {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
 }
 
 .game-hud {
@@ -761,7 +903,30 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 12px;
+}
+
+.gameover-rank-box {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.12), rgba(157, 78, 221, 0.15));
+  border: 1px solid var(--border-active);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rank-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.rank-name {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: var(--accent-cyan);
 }
 
 .stat-box {

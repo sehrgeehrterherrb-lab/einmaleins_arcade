@@ -16,6 +16,28 @@
     musicVolume: 0.35        // Hintergrundmusik Lautstärke
   };
 
+  // ==================== COOLE RANG-NAMEN & LEVEL ====================
+  const LEVEL_RANKS = [
+    { level: 1, name: 'Rechen-Rookie', icon: '🟢', color: '#10b981' },
+    { level: 2, name: 'Blitz-Rechner', icon: '⚡', color: '#00e5ff' },
+    { level: 3, name: 'Zahlen-Ninja', icon: '🥋', color: '#9d4edd' },
+    { level: 4, name: 'Turbo-Brain', icon: '🚀', color: '#ffb703' },
+    { level: 5, name: 'Arcade-Champion', icon: '👑', color: '#f72585' },
+    { level: 6, name: 'Mathe-Titan', icon: '🔥', color: '#ef4444' }
+  ];
+
+  function getRankForLevel(lvl) {
+    if (lvl >= 6) {
+      return { 
+        level: lvl, 
+        name: lvl === 6 ? 'Mathe-Titan' : `Titan (Gottmodus +${lvl - 6})`, 
+        icon: '🔥', 
+        color: '#ef4444' 
+      };
+    }
+    return LEVEL_RANKS[lvl - 1] || LEVEL_RANKS[0];
+  }
+
   // ==================== ZUSTAND (STATE) ====================
   const state = {
     screen: 'menu',           // 'menu', 'learnSetup', 'game', 'gameover'
@@ -78,6 +100,14 @@
     btnStartLearn: document.getElementById('btnStartLearn'),
     
     // Game HUD & Elements
+    levelStatusBar: document.getElementById('levelStatusBar'),
+    levelNrDisplay: document.getElementById('levelNrDisplay'),
+    levelNameDisplay: document.getElementById('levelNameDisplay'),
+    levelDots: document.getElementById('levelDots'),
+    levelHintText: document.getElementById('levelHintText'),
+    levelUpOverlay: document.getElementById('levelUpOverlay'),
+    levelUpRankText: document.getElementById('levelUpRankText'),
+    levelUpSpeedText: document.getElementById('levelUpSpeedText'),
     hudStreak: document.getElementById('hudStreak'),
     hudBest: document.getElementById('hudBest'),
     hudTimeLeft: document.getElementById('hudTimeLeft'),
@@ -99,6 +129,8 @@
     gameoverIcon: document.getElementById('gameoverIcon'),
     gameoverTitle: document.getElementById('gameoverTitle'),
     gameoverReason: document.getElementById('gameoverReason'),
+    gameoverRankBox: document.getElementById('gameoverRankBox'),
+    gameoverRankName: document.getElementById('gameoverRankName'),
     finalScore: document.getElementById('finalScore'),
     finalBest: document.getElementById('finalBest'),
     highscoreEntryArea: document.getElementById('highscoreEntryArea'),
@@ -256,6 +288,33 @@
   function updateHud() {
     dom.hudStreak.textContent = state.streak;
     dom.hudBest.textContent = getBestStreakForCurrentMode();
+
+    if (state.mode === 'learn') {
+      dom.levelStatusBar.style.display = 'none';
+      return;
+    }
+
+    dom.levelStatusBar.style.display = 'flex';
+    const interval = state.settings.stepInterval || 5;
+    const lvl = Math.floor(state.streak / interval) + 1;
+    const rank = getRankForLevel(lvl);
+
+    dom.levelNrDisplay.textContent = `LVL ${rank.level}`;
+    dom.levelNameDisplay.textContent = `${rank.name} ${rank.icon}`;
+
+    // Fortschrittspunkte zeichnen (z. B. 5 Punkte)
+    dom.levelDots.innerHTML = '';
+    const progressInLevel = state.streak % interval;
+    for (let i = 0; i < interval; i++) {
+      const dot = document.createElement('span');
+      dot.className = 'dot' + (i < progressInLevel ? ' filled' : '');
+      dom.levelDots.appendChild(dot);
+    }
+
+    const tasksRemaining = interval - progressInLevel;
+    dom.levelHintText.textContent = tasksRemaining === 1 
+      ? 'Noch 1 Aufgabe bis Level Up!' 
+      : `Noch ${tasksRemaining} bis Level ${lvl + 1}`;
   }
 
   // Zeitlimit für die aktuelle Aufgabe berechnen
@@ -459,17 +518,28 @@
 
     if (userAnswer === correct) {
       // RICHTIG!
-      window.audio.playCorrect();
-      triggerConfetti();
       state.streak++;
       updateHud();
-      dom.feedbackMsg.textContent = 'Richtig! ⭐';
-      dom.feedbackMsg.style.color = 'var(--accent-green)';
-      
-      // Kurze visuelle Pause für gutes Gefühl
-      setTimeout(() => {
-        nextProblem();
-      }, 180);
+
+      const interval = state.settings.stepInterval || 5;
+      const isLevelUp = (state.streak > 0 && state.streak % interval === 0 && state.mode !== 'learn');
+
+      if (isLevelUp) {
+        // LEVEL UP! Belohnung & Atempause
+        state.timerRunning = false;
+        const newLvl = Math.floor(state.streak / interval) + 1;
+        triggerLevelUp(newLvl);
+      } else {
+        window.audio.playCorrect();
+        triggerConfetti(25);
+        dom.feedbackMsg.textContent = 'Richtig! ⭐';
+        dom.feedbackMsg.style.color = 'var(--accent-green)';
+        
+        // Kurze visuelle Pause für gutes Gefühl
+        setTimeout(() => {
+          nextProblem();
+        }, 180);
+      }
 
     } else {
       // FALSCH!
@@ -489,6 +559,28 @@
         triggerGameOver(`Falsches Ergebnis eingetippt (${userAnswer})!`);
       }
     }
+  }
+
+  // ==================== LEVEL UP CELEBRATION ====================
+  function triggerLevelUp(newLevel) {
+    const rank = getRankForLevel(newLevel);
+    const nextTime = calculateAllocatedTime();
+
+    window.audio.playLevelUp();
+    triggerConfetti(70);
+
+    dom.feedbackMsg.textContent = '⚡ LEVEL UP! ⚡';
+    dom.feedbackMsg.style.color = 'var(--accent-yellow)';
+
+    dom.levelUpRankText.textContent = `LEVEL ${rank.level}: ${rank.name.toUpperCase()} ${rank.icon}`;
+    dom.levelUpSpeedText.textContent = `Tempo zieht an: ${nextTime.toFixed(1)}s pro Aufgabe!`;
+    dom.levelUpOverlay.classList.add('active');
+
+    // 1.1s verdiente Atempause & Belohnung zum Genießen
+    setTimeout(() => {
+      dom.levelUpOverlay.classList.remove('active');
+      nextProblem();
+    }, 1100);
   }
 
   function handleTimeout() {
@@ -516,6 +608,12 @@
     dom.gameoverReason.textContent = reason;
     dom.finalScore.textContent = state.streak;
     dom.correctSolutionText.textContent = `${state.currentProblem.a} × ${state.currentProblem.b} = ${state.currentProblem.answer}`;
+
+    // Erreichten Rang anzeigen
+    const interval = state.settings.stepInterval || 5;
+    const finalLvl = Math.max(1, Math.floor(state.streak / interval) + 1);
+    const finalRank = getRankForLevel(finalLvl);
+    dom.gameoverRankName.textContent = `LVL ${finalRank.level} • ${finalRank.name} ${finalRank.icon}`;
 
     const list = state.highscores[state.mode] || [];
     const bestEver = list.length > 0 ? list[0].score : 0;

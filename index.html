@@ -135,10 +135,22 @@
 
     <!-- ==================== SCREEN: SPIELFELD ==================== -->
     <main id="screenGame" class="screen">
-      <!-- HUD OBEN: Streak, Highscore, Level-Info -->
+      <!-- LEVEL & FORTSCHRITT STATUS-LEISTE -->
+      <div class="level-status-bar" id="levelStatusBar">
+        <div class="level-badge-pill" id="levelBadgePill">
+          <span class="level-nr" id="levelNrDisplay">LVL 1</span>
+          <span class="level-name" id="levelNameDisplay">Rechen-Rookie</span>
+        </div>
+        <div class="level-progress-wrap">
+          <div class="level-dots" id="levelDots"></div>
+          <span class="level-hint" id="levelHintText">5 bis Level 2</span>
+        </div>
+      </div>
+
+      <!-- HUD OBEN: Streak, Highscore, Zeit -->
       <div class="game-hud">
         <div class="hud-item hud-streak">
-          <span class="hud-label">SERIE (STREAK)</span>
+          <span class="hud-label">SERIE</span>
           <span class="hud-value" id="hudStreak">0</span>
         </div>
         <div class="hud-item hud-best">
@@ -154,6 +166,16 @@
       <!-- TIMER-BALKEN -->
       <div class="timer-container" id="timerContainer">
         <div class="timer-bar" id="timerBar"></div>
+      </div>
+
+      <!-- LEVEL UP CELEBRATION OVERLAY -->
+      <div class="levelup-overlay" id="levelUpOverlay">
+        <div class="levelup-box">
+          <div class="levelup-sparkle">⚡</div>
+          <h2>LEVEL UP!</h2>
+          <div class="levelup-rank" id="levelUpRankText">LEVEL 2: BLITZ-RECHNER</div>
+          <div class="levelup-speed" id="levelUpSpeedText">Tempo steigt: 7.5s pro Aufgabe!</div>
+        </div>
       </div>
 
       <!-- DIE RECHENAUFGABE -->
@@ -216,6 +238,11 @@
             <span class="stat-title">Modus-Rekord</span>
             <span class="stat-big highlight" id="finalBest">0</span>
           </div>
+        </div>
+
+        <div class="gameover-rank-box" id="gameoverRankBox">
+          <span class="rank-label">Erreichter Rang:</span>
+          <span class="rank-name" id="gameoverRankName">LVL 1 • Rechen-Rookie 🟢</span>
         </div>
 
         <!-- HIGHSCORE-EINTRAG (falls Rekord geknackt oder Top-Liste) -->

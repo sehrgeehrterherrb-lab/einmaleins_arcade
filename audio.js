@@ -185,6 +185,48 @@ class ArcadeAudio {
     });
   }
 
+  // 6b. Fetter LEVEL-UP Sound (Triumphales Power-Up mit Glissando & Akkord)
+  playLevelUp() {
+    if (this.muted) return;
+    this.init();
+    const t = this.ctx.currentTime;
+
+    // Aufsteigender Synth-Glide
+    const glideOsc = this.ctx.createOscillator();
+    const glideGain = this.ctx.createGain();
+    glideOsc.type = 'sawtooth';
+    glideOsc.frequency.setValueAtTime(220, t);
+    glideOsc.frequency.exponentialRampToValueAtTime(880, t + 0.35);
+
+    glideGain.gain.setValueAtTime(0.25 * this.sfxVolume, t);
+    glideGain.gain.exponentialRampToValueAtTime(0.001, t + 0.38);
+
+    glideOsc.connect(glideGain);
+    glideGain.connect(this.ctx.destination);
+    glideOsc.start(t);
+    glideOsc.stop(t + 0.38);
+
+    // Kraftvoller Dreiklang-Akkord direkt nach dem Glide
+    const chordNotes = [523.25, 659.25, 783.99, 1046.50, 1567.98]; // C-Dur Power Chime
+    chordNotes.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, t + 0.3 + idx * 0.03);
+
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.setValueAtTime(0.32 * this.sfxVolume, t + 0.3 + idx * 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3 + idx * 0.03 + 0.6);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(t + 0.3 + idx * 0.03);
+      osc.stop(t + 0.3 + idx * 0.03 + 0.6);
+    });
+  }
+
   // 7. Lo-Fi Arcade Synth Beat (synthetische Hintergrundmusik)
   startMusic() {
     if (this.muted || this.isMusicPlaying || this.musicVolume <= 0) return;
