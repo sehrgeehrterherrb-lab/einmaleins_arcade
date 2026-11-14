@@ -875,58 +875,97 @@ body {
   background: var(--bg-card);
   border: 2px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: 24px 20px;
+  padding: 20px 18px;
   text-align: center;
   margin: auto 0;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 
-.gameover-icon {
-  font-size: 3.2rem;
-  margin-bottom: 6px;
-}
-
-.gameover-header h2 {
-  font-size: 2rem;
-  font-weight: 900;
-  color: var(--accent-pink);
-  margin-bottom: 4px;
-}
-
-.gameover-header p {
-  color: var(--text-secondary);
-  font-size: 1rem;
-  margin-bottom: 18px;
-}
-
-.gameover-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.gameover-rank-box {
+.gameover-summary-banner {
   background: linear-gradient(135deg, rgba(0, 229, 255, 0.12), rgba(157, 78, 221, 0.15));
   border: 1px solid var(--border-active);
   border-radius: var(--radius-md);
-  padding: 10px 14px;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  padding: 16px 14px;
+  margin-bottom: 12px;
 }
 
-.rank-label {
-  font-size: 0.8rem;
+.summary-stars {
+  font-size: 1.5rem;
+  margin-bottom: 4px;
+}
+
+#gameoverPraiseTitle {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--accent-yellow);
+  margin-bottom: 4px;
+}
+
+#gameoverPraiseDesc {
+  font-size: 0.95rem;
+  color: #fff;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+#gameoverPraiseDesc strong {
+  color: var(--accent-cyan);
+}
+
+.gameover-reason-pill {
+  display: inline-block;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  font-size: 0.75rem;
   font-weight: 700;
-  color: var(--text-muted);
+  padding: 3px 10px;
+  border-radius: 12px;
 }
 
-.rank-name {
-  font-size: 1.05rem;
+/* BESTENLISTE AUF DEM GAME-OVER BILDSCHIRM */
+.gameover-leaderboard-box {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.gameover-lb-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 0 4px;
+}
+
+.gameover-lb-header span:first-child {
+  font-size: 0.85rem;
   font-weight: 900;
   color: var(--accent-cyan);
+  letter-spacing: 0.5px;
+}
+
+.lb-subtag {
+  font-size: 0.72rem;
+  color: var(--accent-yellow);
+  font-weight: 700;
+}
+
+.gameover-lb-list {
+  padding: 0;
+  max-height: 190px;
+  overflow-y: auto;
+  gap: 6px;
+}
+
+.lb-row.player-row {
+  border-color: var(--accent-yellow);
+  background: linear-gradient(135deg, rgba(255, 183, 3, 0.2), rgba(22, 30, 52, 0.9));
+  box-shadow: 0 0 10px rgba(255, 183, 3, 0.3);
+  animation: pulse 2s infinite alternate;
 }
 
 .stat-box {
@@ -1217,6 +1256,66 @@ body {
   display: flex;
   justify-content: space-between;
   gap: 12px;
+}
+
+/* ==================== QR-CODE MODAL ==================== */
+.qr-content {
+  padding: 16px 20px;
+  text-align: center;
+}
+
+.qr-hint {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+}
+
+.qr-canvas-wrap {
+  display: inline-block;
+  background: #ffffff;
+  padding: 12px;
+  border-radius: 16px;
+  box-shadow: 0 0 25px rgba(0, 229, 255, 0.35);
+  margin-bottom: 16px;
+}
+
+#qrCanvas {
+  display: block;
+  width: 200px;
+  height: 200px;
+  border-radius: 8px;
+}
+
+.qr-url-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.qr-url-row input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  outline: none;
+}
+
+.qr-instructions {
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid var(--border-active);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.qr-instructions strong {
+  color: var(--accent-cyan);
 }
 
 /* ==================== RESPONSIVE TUNING ==================== */

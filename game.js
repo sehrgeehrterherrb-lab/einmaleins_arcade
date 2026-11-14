@@ -16,6 +16,33 @@
     musicVolume: 0.35        // Hintergrundmusik Lautstärke
   };
 
+  // ==================== STANDARDFÜLLUNG BESTENLISTE: SAMMY & FLOCKE ====================
+  const DEFAULT_HIGHSCORES = {
+    easy: [
+      { name: 'Flocke 🐱', score: 28, date: '14.11.2026' },
+      { name: 'Sammy 🐱', score: 20, date: '14.11.2026' },
+      { name: 'Flocke 🐱', score: 14, date: '14.11.2026' },
+      { name: 'Sammy 🐱', score: 9, date: '14.11.2026' },
+      { name: 'Flocke 🐱', score: 5, date: '14.11.2026' },
+      { name: 'Sammy 🐱', score: 3, date: '14.11.2026' }
+    ],
+    normal: [
+      { name: 'Sammy 🐱', score: 22, date: '14.11.2026' },
+      { name: 'Flocke 🐱', score: 16, date: '14.11.2026' },
+      { name: 'Sammy 🐱', score: 11, date: '14.11.2026' },
+      { name: 'Flocke 🐱', score: 7, date: '14.11.2026' },
+      { name: 'Sammy 🐱', score: 4, date: '14.11.2026' },
+      { name: 'Flocke 🐱', score: 2, date: '14.11.2026' }
+    ],
+    hardcore: [
+      { name: 'Flocke 🐱', score: 15, date: '14.11.2026' },
+      { name: 'Sammy 🐱', score: 10, date: '14.11.2026' },
+      { name: 'Flocke 🐱', score: 6, date: '14.11.2026' },
+      { name: 'Sammy 🐱', score: 3, date: '14.11.2026' },
+      { name: 'Flocke 🐱', score: 2, date: '14.11.2026' }
+    ]
+  };
+
   // ==================== COOLE RANG-NAMEN & LEVEL ====================
   const LEVEL_RANKS = [
     { level: 1, name: 'Rechen-Rookie', icon: '🟢', color: '#10b981' },
@@ -80,6 +107,7 @@
     
     // Nav & Badges
     btnHome: document.getElementById('btnHome'),
+    btnQr: document.getElementById('btnQr'),
     btnSound: document.getElementById('btnSound'),
     soundIcon: document.getElementById('soundIcon'),
     btnHighscores: document.getElementById('btnHighscores'),
@@ -126,13 +154,11 @@
     padEnter: document.getElementById('padEnter'),
     
     // Game Over
-    gameoverIcon: document.getElementById('gameoverIcon'),
-    gameoverTitle: document.getElementById('gameoverTitle'),
+    gameoverPraiseTitle: document.getElementById('gameoverPraiseTitle'),
+    gameoverPraiseDesc: document.getElementById('gameoverPraiseDesc'),
     gameoverReason: document.getElementById('gameoverReason'),
-    gameoverRankBox: document.getElementById('gameoverRankBox'),
-    gameoverRankName: document.getElementById('gameoverRankName'),
-    finalScore: document.getElementById('finalScore'),
-    finalBest: document.getElementById('finalBest'),
+    gameoverModeName: document.getElementById('gameoverModeName'),
+    gameoverLeaderboardList: document.getElementById('gameoverLeaderboardList'),
     highscoreEntryArea: document.getElementById('highscoreEntryArea'),
     playerNameInput: document.getElementById('playerNameInput'),
     btnSaveHighscore: document.getElementById('btnSaveHighscore'),
@@ -140,6 +166,14 @@
     correctSolutionText: document.getElementById('correctSolutionText'),
     btnPlayAgain: document.getElementById('btnPlayAgain'),
     btnGoMenu: document.getElementById('btnGoMenu'),
+
+    // QR Modal
+    modalQr: document.getElementById('modalQr'),
+    btnCloseQr: document.getElementById('btnCloseQr'),
+    btnOkQr: document.getElementById('btnOkQr'),
+    qrCanvas: document.getElementById('qrCanvas'),
+    qrUrlInput: document.getElementById('qrUrlInput'),
+    btnCopyUrl: document.getElementById('btnCopyUrl'),
     
     // Highscore Modal
     leaderboardList: document.getElementById('leaderboardList'),
@@ -177,10 +211,21 @@
       const savedHighscores = localStorage.getItem('1x1_highscores');
       if (savedHighscores) {
         state.highscores = JSON.parse(savedHighscores);
+      } else {
+        state.highscores = JSON.parse(JSON.stringify(DEFAULT_HIGHSCORES));
       }
     } catch (e) {
       console.warn('LocalStorage nicht verfügbar oder fehlerhaft:', e);
+      state.highscores = JSON.parse(JSON.stringify(DEFAULT_HIGHSCORES));
     }
+
+    // Sicherstellen, dass Listen nicht leer sind (immer mindestens Sammy & Flocke)
+    ['easy', 'normal', 'hardcore'].forEach(m => {
+      if (!state.highscores[m] || state.highscores[m].length === 0) {
+        state.highscores[m] = JSON.parse(JSON.stringify(DEFAULT_HIGHSCORES[m]));
+      }
+    });
+
     // Audio initialisieren
     window.audio.setVolumes(state.settings.sfxVolume, state.settings.musicVolume);
   }
@@ -604,20 +649,25 @@
     state.timerRunning = false;
     window.audio.playGameOver();
 
-    dom.gameoverTitle.textContent = 'GAME OVER!';
-    dom.gameoverReason.textContent = reason;
-    dom.finalScore.textContent = state.streak;
-    dom.correctSolutionText.textContent = `${state.currentProblem.a} × ${state.currentProblem.b} = ${state.currentProblem.answer}`;
-
-    // Erreichten Rang anzeigen
     const interval = state.settings.stepInterval || 5;
     const finalLvl = Math.max(1, Math.floor(state.streak / interval) + 1);
     const finalRank = getRankForLevel(finalLvl);
-    dom.gameoverRankName.textContent = `LVL ${finalRank.level} • ${finalRank.name} ${finalRank.icon}`;
 
-    const list = state.highscores[state.mode] || [];
-    const bestEver = list.length > 0 ? list[0].score : 0;
-    dom.finalBest.textContent = Math.max(bestEver, state.streak);
+    // Motivierende Auswertung & Lob
+    if (state.streak === 0) {
+      dom.gameoverPraiseTitle.textContent = 'Kopf hoch! 🐱';
+      dom.gameoverPraiseDesc.innerHTML = 'Beim nächsten Mal klappt es bestimmt! Probier es gleich nochmal.';
+    } else {
+      dom.gameoverPraiseTitle.textContent = 'Starke Leistung! ⭐';
+      dom.gameoverPraiseDesc.innerHTML = `Du hast <strong>${state.streak} ${state.streak === 1 ? 'Aufgabe' : 'Aufgaben'}</strong> gelöst und <strong>Level ${finalRank.level} (${finalRank.name} ${finalRank.icon})</strong> erreicht!`;
+    }
+
+    dom.gameoverReason.textContent = reason;
+    dom.correctSolutionText.textContent = `${state.currentProblem.a} × ${state.currentProblem.b} = ${state.currentProblem.answer}`;
+    dom.gameoverModeName.textContent = state.mode.toUpperCase();
+
+    // Bestenliste auf dem Game-Over-Screen anzeigen
+    renderGameoverLeaderboard(state.mode, null);
 
     // Prüfen, ob der Score für die Bestenliste reicht (Top 10 und Streak > 0)
     const qualifies = isHighscore(state.mode, state.streak);
@@ -628,13 +678,35 @@
       setTimeout(() => {
         dom.playerNameInput.focus();
         window.audio.playCheer();
-        triggerConfetti(60);
+        triggerConfetti(65);
       }, 350);
     } else {
       dom.highscoreEntryArea.style.display = 'none';
     }
 
     showScreen('gameover');
+  }
+
+  function renderGameoverLeaderboard(mode, highlightedName) {
+    const list = state.highscores[mode] || [];
+    dom.gameoverLeaderboardList.innerHTML = '';
+
+    list.slice(0, 6).forEach((item, idx) => {
+      const row = document.createElement('div');
+      const rankClass = idx === 0 ? 'top-1' : idx === 1 ? 'top-2' : idx === 2 ? 'top-3' : '';
+      const isPlayer = (highlightedName && item.name.toUpperCase().startsWith(highlightedName.toUpperCase()));
+      row.className = `lb-row ${rankClass} ${isPlayer ? 'player-row' : ''}`;
+
+      const medals = ['🥇', '🥈', '🥉'];
+      const rankDisplay = medals[idx] || `#${idx + 1}`;
+
+      row.innerHTML = `
+        <span class="lb-rank">${rankDisplay}</span>
+        <span class="lb-name">${item.name}</span>
+        <span class="lb-score">${item.score} <small style="font-size:0.7rem; color:var(--text-muted)">Serie</small></span>
+      `;
+      dom.gameoverLeaderboardList.appendChild(row);
+    });
   }
 
   function isHighscore(mode, score) {
@@ -654,7 +726,7 @@
     }
 
     state.highscores[state.mode].push({
-      name: name,
+      name: `${name} ⭐`,
       score: score,
       date: new Date().toLocaleDateString('de-DE')
     });
@@ -667,7 +739,10 @@
     saveHighscores();
     dom.highscoreEntryArea.style.display = 'none';
     window.audio.playCorrect();
-    openHighscoresModal(state.mode);
+    triggerConfetti(50);
+    
+    // Bestenliste auf dem Screen sofort mit hervorhebung aktualisieren!
+    renderGameoverLeaderboard(state.mode, name);
   }
 
   // ==================== MODALS: BESTENLISTE ====================
@@ -756,6 +831,28 @@
     dom.modalSettings.classList.remove('active');
   }
 
+  // ==================== MODALS: QR-CODE FÜRS TABLET ====================
+  function openQrModal() {
+    window.audio.playClick();
+    const url = window.location.href;
+    dom.qrUrlInput.value = url;
+
+    try {
+      if (typeof QRCode !== 'undefined' && dom.qrCanvas) {
+        QRCode.generateCanvas(dom.qrCanvas, url, 200);
+      }
+    } catch (err) {
+      console.warn('QR Code Generierung:', err);
+    }
+
+    dom.modalQr.classList.add('active');
+  }
+
+  function closeQrModal() {
+    window.audio.playClick();
+    dom.modalQr.classList.remove('active');
+  }
+
   // ==================== PARTIKEL SYSTEM (CONFETTI / STARS) ====================
   let particles = [];
   const pCtx = dom.canvas.getContext('2d');
@@ -833,6 +930,7 @@
       dom.soundIcon.textContent = isMuted ? '🔇' : '🔊';
     });
 
+    dom.btnQr.addEventListener('click', openQrModal);
     dom.btnHighscores.addEventListener('click', () => openHighscoresModal('normal'));
     dom.btnSettings.addEventListener('click', openSettingsModal);
 
@@ -913,12 +1011,25 @@
     // Modal Close Buttons
     dom.btnCloseHighscores.addEventListener('click', closeHighscoresModal);
     dom.btnCloseSettings.addEventListener('click', closeSettingsModal);
+    dom.btnCloseQr.addEventListener('click', closeQrModal);
+    dom.btnOkQr.addEventListener('click', closeQrModal);
+
+    dom.btnCopyUrl.addEventListener('click', () => {
+      window.audio.playClick();
+      navigator.clipboard.writeText(dom.qrUrlInput.value).then(() => {
+        dom.btnCopyUrl.textContent = 'Kopiert! ✓';
+        setTimeout(() => { dom.btnCopyUrl.textContent = 'Kopieren'; }, 1800);
+      }).catch(() => {
+        dom.qrUrlInput.select();
+      });
+    });
 
     dom.btnClearHighscores.addEventListener('click', () => {
-      if (confirm('Möchtest du wirklich alle Bestenlisten-Einträge löschen?')) {
-        state.highscores = { easy: [], normal: [], hardcore: [] };
+      if (confirm('Möchtest du die Bestenliste auf die Katzen-Rekorde von Sammy & Flocke zurücksetzen?')) {
+        state.highscores = JSON.parse(JSON.stringify(DEFAULT_HIGHSCORES));
         saveHighscores();
         switchHighscoreTab('normal');
+        window.audio.playCorrect();
       }
     });
 
@@ -974,6 +1085,7 @@
       if (e.key === 'Escape') {
         if (dom.modalHighscores.classList.contains('active')) closeHighscoresModal();
         else if (dom.modalSettings.classList.contains('active')) closeSettingsModal();
+        else if (dom.modalQr.classList.contains('active')) closeQrModal();
         else if (state.screen === 'game') showScreen('menu');
         return;
       }

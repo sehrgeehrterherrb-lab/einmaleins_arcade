@@ -30,6 +30,9 @@
       </div>
 
       <div class="top-actions">
+        <button id="btnQr" class="icon-btn" title="📱 QR-Code fürs Tablet / Handy" aria-label="QR-Code">
+          📱
+        </button>
         <button id="btnSound" class="icon-btn" title="Ton an/aus (Taste M)" aria-label="Ton umschalten">
           <span id="soundIcon">🔊</span>
         </button>
@@ -223,39 +226,36 @@
     <!-- ==================== SCREEN: GAME OVER / RUNDENENDE ==================== -->
     <main id="screenGameOver" class="screen">
       <div class="gameover-card">
-        <div class="gameover-header">
-          <div class="gameover-icon" id="gameoverIcon">💥</div>
-          <h2 id="gameoverTitle">GAME OVER!</h2>
-          <p id="gameoverReason">Die Zeit ist abgelaufen!</p>
-        </div>
-
-        <div class="gameover-stats">
-          <div class="stat-box">
-            <span class="stat-title">Richtige in Serie</span>
-            <span class="stat-big" id="finalScore">0</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-title">Modus-Rekord</span>
-            <span class="stat-big highlight" id="finalBest">0</span>
-          </div>
-        </div>
-
-        <div class="gameover-rank-box" id="gameoverRankBox">
-          <span class="rank-label">Erreichter Rang:</span>
-          <span class="rank-name" id="gameoverRankName">LVL 1 • Rechen-Rookie 🟢</span>
-        </div>
-
-        <!-- HIGHSCORE-EINTRAG (falls Rekord geknackt oder Top-Liste) -->
-        <div class="highscore-entry" id="highscoreEntryArea">
-          <p class="congrats-text">🎉 Neuer Rekord! Trag deinen Namen ein:</p>
-          <div class="name-input-row">
-            <input type="text" id="playerNameInput" maxlength="12" placeholder="DEIN NAME" autofocus>
-            <button class="primary-btn" id="btnSaveHighscore">Speichern</button>
-          </div>
+        <!-- LOB & ZUSAMMENFASSUNG -->
+        <div class="gameover-summary-banner">
+          <div class="summary-stars">🌟 ⭐ 🌟</div>
+          <h2 id="gameoverPraiseTitle">Starke Leistung!</h2>
+          <p id="gameoverPraiseDesc">Du hast <strong>0 Aufgaben</strong> gelöst und <strong>Level 1 (Rechen-Rookie 🟢)</strong> erreicht!</p>
+          <div class="gameover-reason-pill" id="gameoverReason">Die Zeit ist abgelaufen!</div>
         </div>
 
         <div class="correct-solution" id="correctSolutionBox">
           Die richtige Lösung war: <strong id="correctSolutionText"></strong>
+        </div>
+
+        <!-- HIGHSCORE-EINTRAG (falls Rekord geknackt oder Top-Liste) -->
+        <div class="highscore-entry" id="highscoreEntryArea">
+          <p class="congrats-text">🐱 Neuer Rekord! Du hast die Katzen geschlagen:</p>
+          <div class="name-input-row">
+            <input type="text" id="playerNameInput" maxlength="12" placeholder="DEIN NAME">
+            <button class="primary-btn" id="btnSaveHighscore">Speichern</button>
+          </div>
+        </div>
+
+        <!-- BESTENLISTE DIREKT AUF DEM GAME-OVER-BILDSCHIRM -->
+        <div class="gameover-leaderboard-box">
+          <div class="gameover-lb-header">
+            <span>🏆 BESTENLISTE • <span id="gameoverModeName">NORMAL</span></span>
+            <span class="lb-subtag">Sammy & Flocke fordern dich heraus!</span>
+          </div>
+          <div class="leaderboard-table gameover-lb-list" id="gameoverLeaderboardList">
+            <!-- Dynamisch befüllt mit Sammy, Flocke und dem Spieler -->
+          </div>
         </div>
 
         <div class="gameover-actions">
@@ -361,8 +361,38 @@
       </div>
     </div>
 
+    <!-- ==================== MODAL: QR-CODE FÜRS TABLET ==================== -->
+    <div id="modalQr" class="modal">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h2>📱 Aufs Tablet holen</h2>
+          <button class="close-btn" id="btnCloseQr">✕</button>
+        </div>
+
+        <div class="qr-content">
+          <p class="qr-hint">Halte die Kamera des Tablets oder Smartphones auf diesen QR-Code:</p>
+          <div class="qr-canvas-wrap">
+            <canvas id="qrCanvas"></canvas>
+          </div>
+          <div class="qr-url-row">
+            <input type="text" id="qrUrlInput" readonly>
+            <button class="secondary-btn" id="btnCopyUrl">Kopieren</button>
+          </div>
+          <div class="qr-instructions">
+            <span>💡 <strong>Tipp für Vollbild & Offline:</strong></span>
+            Im Browser auf dem Tablet oben rechts auf <strong>⋮</strong> tippen und <strong>„App installieren“</strong> wählen!
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="primary-btn" id="btnOkQr" style="width:100%">Verstanden</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
+  <script src="qrcode.min.js"></script>
   <script src="audio.js"></script>
   <script src="game.js"></script>
   <script>
