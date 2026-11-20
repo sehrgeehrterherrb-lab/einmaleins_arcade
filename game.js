@@ -300,7 +300,7 @@
     state.mode = mode;
     state.streak = 0;
     state.currentInput = '';
-    state.timerRunning = false;
+    stopTimer();
 
     // Layout je nach Modus anpassen
     if (mode === 'easy') {
@@ -470,7 +470,18 @@
   }
 
   // ==================== TIMER-ENGINE (60 FPS REQUESTANIMATIONFRAME) ====================
+  let timerRafId = null;
+
+  function stopTimer() {
+    state.timerRunning = false;
+    if (timerRafId) {
+      cancelAnimationFrame(timerRafId);
+      timerRafId = null;
+    }
+  }
+
   function startTimer() {
+    stopTimer(); // Vorherigen Timer-Frame stoppen
     state.allocatedTime = calculateAllocatedTime();
     state.remainingTime = state.allocatedTime;
     state.timerLastTimestamp = performance.now();
@@ -478,38 +489,44 @@
     state.lastTickSecond = Math.ceil(state.remainingTime);
 
     updateTimerDisplay();
+
+    // Loop starten (nur wenn Timer im Modus aktiv ist)
+    if (state.mode !== 'learn' || state.learnHasTimer) {
+      timerRafId = requestAnimationFrame(updateTimerLoop);
+    }
   }
 
   function updateTimerLoop(timestamp) {
-    if (state.timerRunning && (state.mode !== 'learn' || state.learnHasTimer)) {
-      const delta = (timestamp - state.timerLastTimestamp) / 1000;
-      state.timerLastTimestamp = timestamp;
-      state.remainingTime -= delta;
-
-      if (state.remainingTime <= 0) {
-        state.remainingTime = 0;
-        state.timerRunning = false;
-        updateTimerDisplay();
-        handleTimeout();
-        return;
-      }
-
-      // Akustisches Ticken in den letzten 2.5 Sekunden
-      const currentSecFloor = Math.ceil(state.remainingTime);
-      if (state.remainingTime <= 2.5 && currentSecFloor !== state.lastTickSecond) {
-        state.lastTickSecond = currentSecFloor;
-        const urgency = state.remainingTime < 1.2 ? 2 : 1;
-        window.audio.playTick(urgency);
-      }
-
-      updateTimerDisplay();
-    } else {
-      state.timerLastTimestamp = timestamp;
+    if (!state.timerRunning || (state.mode === 'learn' && !state.learnHasTimer)) {
+      timerRafId = null;
+      return;
     }
 
-    requestAnimationFrame(updateTimerLoop);
+    const rawDelta = (timestamp - state.timerLastTimestamp) / 1000;
+    // Schutz gegen Aussetzer (z.B. wenn Bildschirm kurz gesperrt war)
+    const delta = Math.min(0.5, Math.max(0, rawDelta));
+    state.timerLastTimestamp = timestamp;
+    state.remainingTime -= delta;
+
+    if (state.remainingTime <= 0) {
+      state.remainingTime = 0;
+      stopTimer();
+      updateTimerDisplay();
+      handleTimeout();
+      return;
+    }
+
+    // Akustisches Ticken in den letzten 2.5 Sekunden
+    const currentSecFloor = Math.ceil(state.remainingTime);
+    if (state.remainingTime <= 2.5 && currentSecFloor !== state.lastTickSecond) {
+      state.lastTickSecond = currentSecFloor;
+      const urgency = state.remainingTime < 1.2 ? 2 : 1;
+      window.audio.playTick(urgency);
+    }
+
+    updateTimerDisplay();
+    timerRafId = requestAnimationFrame(updateTimerLoop);
   }
-  requestAnimationFrame(updateTimerLoop);
 
   function updateTimerDisplay() {
     if (state.mode === 'learn' && !state.learnHasTimer) {
@@ -571,7 +588,7 @@
 
       if (isLevelUp) {
         // LEVEL UP! Belohnung & Atempause
-        state.timerRunning = false;
+        stopTimer();
         const newLvl = Math.floor(state.streak / interval) + 1;
         triggerLevelUp(newLvl);
       } else {
@@ -600,7 +617,7 @@
         dom.answerPlaceholder.classList.remove('has-val');
       } else {
         // Sudden Death in Arcade-Modi!
-        state.timerRunning = false;
+        stopTimer();
         triggerGameOver(`Falsches Ergebnis eingetippt (${userAnswer})!`);
       }
     }
@@ -646,7 +663,7 @@
 
   // ==================== GAME OVER & REKORDE ====================
   function triggerGameOver(reason) {
-    state.timerRunning = false;
+    stopTimer();
     window.audio.playGameOver();
 
     const interval = state.settings.stepInterval || 5;
@@ -921,7 +938,7 @@
     // Top-Navigation
     dom.btnHome.addEventListener('click', () => {
       window.audio.playClick();
-      state.timerRunning = false;
+      stopTimer();
       showScreen('menu');
     });
 

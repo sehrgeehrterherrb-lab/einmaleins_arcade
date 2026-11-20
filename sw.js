@@ -3,7 +3,7 @@
    Ermöglicht 100% Offline-Betrieb auf dem Tablet / Smartphone (auch bei Oma!)
    ========================================================================== */
 
-const CACHE_NAME = '1x1-arcade-v2';
+const CACHE_NAME = '1x1-arcade-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
