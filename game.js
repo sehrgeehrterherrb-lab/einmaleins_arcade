@@ -1077,7 +1077,39 @@
     dom.cfgMusicVolume.addEventListener('input', (e) => {
       dom.valMusicVolume.textContent = `${Math.round(e.target.value * 100)}%`;
     });
+    // App-Update per Klick im Einstellungsmenü
+    const btnUpdateApp = document.getElementById('btnUpdateApp');
+    if (btnUpdateApp) {
+      btnUpdateApp.addEventListener('click', async () => {
+        btnUpdateApp.textContent = 'Aktualisiere... ⏳';
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          for (const reg of regs) await reg.unregister();
+          const keys = await caches.keys();
+          for (const key of keys) await caches.delete(key);
+        }
+		    // Changelog einmalig nach Versionswechsel anzeigen
+    const CURRENT_VERSION = '1.1';
+	const versionDisplay = document.getElementById('appVersion');
+    if (versionDisplay) versionDisplay.textContent = `v${CURRENT_VERSION}`;
+    const lastSeenVersion = localStorage.getItem('1x1_version');
+    const modalChangelog = document.getElementById('modalChangelog');
+    const btnOkChangelog = document.getElementById('btnOkChangelog');
 
+    if (lastSeenVersion !== CURRENT_VERSION && modalChangelog) {
+      modalChangelog.classList.add('active');
+    }
+
+    if (btnOkChangelog) {
+      btnOkChangelog.addEventListener('click', () => {
+        window.audio.playClick();
+        localStorage.setItem('1x1_version', CURRENT_VERSION);
+        modalChangelog.classList.remove('active');
+      });
+    }
+        window.location.reload();
+      });
+    }
     dom.btnResetSettings.addEventListener('click', () => {
       window.audio.playClick();
       state.settings = { ...DEFAULT_SETTINGS };

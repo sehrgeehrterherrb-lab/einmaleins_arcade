@@ -352,6 +352,13 @@
               </div>
             </div>
           </div>
+		            <div class="setting-group">
+            <h3>🔄 App-Update</h3>
+            <p class="setting-hint">Prüft im WLAN nach neuen Versionen:</p>
+            <button class="secondary-btn" id="btnUpdateApp" style="width: 100%; padding: 12px; font-weight: 800;">
+              🔄 Jetzt aktualisieren
+            </button>
+          </div>
         </div>
 
         <div class="modal-footer">
@@ -360,7 +367,25 @@
         </div>
       </div>
     </div>
-
+    <!-- ==================== MODAL: CHANGELOG / WAS IST NEU ==================== -->
+    <div id="modalChangelog" class="modal">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h2>✨ Was ist neu in v1.1?</h2>
+        </div>
+        <div style="padding: 18px 20px; line-height: 1.6; font-size: 0.95rem; color: #cbd5e1;">
+          <p style="margin-bottom: 8px;"><strong>Folgende Neuerungen sind live:</strong></p>
+          <ul style="padding-left: 20px; margin-bottom: 12px;">
+            <li>Versionsanzeige (v1.1) hinzugefügt</li>
+            <li>Neuer Button „Jetzt aktualisieren“ in den Einstellungen</li>
+            <li>Automatisches Leeren des alten Caches</li>
+          </ul>
+        </div>
+        <div class="modal-footer">
+          <button class="primary-btn" id="btnOkChangelog" style="width: 100%;">Cool, los geht's! ✓</button>
+        </div>
+      </div>
+    </div>
     <!-- ==================== MODAL: QR-CODE FÜRS TABLET ==================== -->
     <div id="modalQr" class="modal">
       <div class="modal-dialog">
@@ -389,7 +414,7 @@
         </div>
       </div>
     </div>
-      <div style="text-align: right; font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">v1.1</div>
+      <div id="appVersion" style="text-align: right; font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">v1.1</div>
   </div>
 
   <script src="qrcode.min.js"></script>
