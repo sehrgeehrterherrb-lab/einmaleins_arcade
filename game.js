@@ -1088,17 +1088,26 @@
           const keys = await caches.keys();
           for (const key of keys) await caches.delete(key);
         }
-		    // Changelog einmalig nach Versionswechsel anzeigen
+        window.location.reload();
+      });
+    }
+
+    // Changelog & Versionsanzeige einmalig nach Versionswechsel
     const CURRENT_VERSION = '1.2';
-	const CHAGELOG_NOTES=`
-	<li>Timerfehler behoben</li>
-	<li>Sammy ist eine böse Katze 🐱</li>
-	`;
-	const changelog=document.getElementById('changelog');
-	 if (changelog) changelog.innerHTML = CHAGELOG_NOTES;
-	 
-	const versionDisplay = document.getElementById('appVersion');
+    const CHANGELOG_NOTES = `
+      <li>Timerfehler behoben</li>
+      <li>Sammy ist eine böse Katze 🐱</li>
+    `;
+
+    const changelogTitle = document.getElementById('changelogTitle');
+    if (changelogTitle) changelogTitle.textContent = `✨ Was ist neu in v${CURRENT_VERSION}?`;
+
+    const changelog = document.getElementById('changelog');
+    if (changelog) changelog.innerHTML = CHANGELOG_NOTES;
+
+    const versionDisplay = document.getElementById('appVersion');
     if (versionDisplay) versionDisplay.textContent = `v${CURRENT_VERSION}`;
+
     const lastSeenVersion = localStorage.getItem('1x1_version');
     const modalChangelog = document.getElementById('modalChangelog');
     const btnOkChangelog = document.getElementById('btnOkChangelog');
@@ -1112,9 +1121,6 @@
         window.audio.playClick();
         localStorage.setItem('1x1_version', CURRENT_VERSION);
         modalChangelog.classList.remove('active');
-      });
-    }
-        window.location.reload();
       });
     }
     dom.btnResetSettings.addEventListener('click', () => {
