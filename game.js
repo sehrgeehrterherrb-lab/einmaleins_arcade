@@ -1089,7 +1089,14 @@
           for (const key of keys) await caches.delete(key);
         }
 		    // Changelog einmalig nach Versionswechsel anzeigen
-    const CURRENT_VERSION = '1.1';
+    const CURRENT_VERSION = '1.2';
+	const CHAGELOG_NOTES=`
+	<li>Timerfehler behoben</li>
+	<li>Sammy ist eine böse Katze 🐱</li>
+	`;
+	const changelog=document.getElementById('changelog');
+	 if (changelog) changelog.innerHTML = CHAGELOG_NOTES;
+	 
 	const versionDisplay = document.getElementById('appVersion');
     if (versionDisplay) versionDisplay.textContent = `v${CURRENT_VERSION}`;
     const lastSeenVersion = localStorage.getItem('1x1_version');
