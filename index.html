@@ -389,19 +389,24 @@
         </div>
       </div>
     </div>
-
+      <div style="text-align: right; font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">v1.1</div>
   </div>
 
   <script src="qrcode.min.js"></script>
   <script src="audio.js"></script>
   <script src="game.js"></script>
-  <script>
+    <script>
     // Service Worker Registrierung für Offline-Nutzung (PWA)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').catch(err => {
           console.log('ServiceWorker Hinweis:', err);
         });
+      });
+
+      // Bei neuem Service Worker Seite automatisch neu laden:
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        window.location.reload();
       });
     }
   </script>
