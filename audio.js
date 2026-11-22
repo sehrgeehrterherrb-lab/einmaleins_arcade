@@ -289,6 +289,49 @@ class ArcadeAudio {
       this.musicInterval = null;
     }
   }
+
+  // 8. Freeze-Sound (Joker: Zeit anhalten)
+  playFreeze() {
+    if (this.muted) return;
+    this.init();
+    const t = this.ctx.currentTime;
+    // Kristallisierendes Eis-Arpeggio
+    const freqs = [880, 1174.66, 1396.91, 1760]; // A5, D6, F6, A6
+    freqs.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, t + idx * 0.04);
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.setValueAtTime(0.18 * this.sfxVolume, t + idx * 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.04 + 0.4);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(t + idx * 0.04);
+      osc.stop(t + idx * 0.04 + 0.4);
+    });
+  }
+
+  // 9. Extra-Joker verdient Chime
+  playJokerEarned() {
+    if (this.muted) return;
+    this.init();
+    const t = this.ctx.currentTime;
+    const freqs = [659.25, 830.61, 987.77, 1318.51]; // E5, G#5, B5, E6
+    freqs.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t + idx * 0.05);
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.setValueAtTime(0.2 * this.sfxVolume, t + idx * 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.05 + 0.5);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(t + idx * 0.05);
+      osc.stop(t + idx * 0.05 + 0.5);
+    });
+  }
 }
 
 // Global instanziieren

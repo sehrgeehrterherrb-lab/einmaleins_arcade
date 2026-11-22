@@ -13,7 +13,9 @@
     stepInterval: 5,         // Alle wie viele Aufgaben wird es schneller
     stepReduction: 0.5,      // Zeitkürzung pro Stufe
     sfxVolume: 1.0,          // Soundeffekte Lautstärke
-    musicVolume: 0.35        // Hintergrundmusik Lautstärke
+    musicVolume: 0.35,       // Hintergrundmusik Lautstärke
+    startJokers: 3,          // Anzahl Start-Joker (Standard: 3)
+    jokerInterval: 10        // Zusätzlicher Joker alle X gelöste Aufgaben (Standard: 10)
   };
 
   // ==================== STANDARDFÜLLUNG BESTENLISTE: SAMMY & FLOCKE ====================
@@ -71,11 +73,18 @@
     mode: 'normal',           // 'learn', 'easy', 'normal', 'hardcore'
     learnSelectedTables: [2, 3, 4, 5, 10], // Standardmäßig ausgewählte Reihen
     learnHasTimer: false,     // Timer im Lernmodus aktiv?
+    learnInputMode: localStorage.getItem('1x1_learn_input_mode') || 'choice', // 'choice' (4 Antworten) | 'numpad' (Tippen)
     
     // Spielrunde
     streak: 0,
     currentProblem: null,
     currentInput: '',
+
+    // Joker
+    jokersLeft: 3,
+    tasksSinceLastJoker: 0,
+    jokerUsedOnCurrentTask: false,
+    timerFrozen: false,
     
     // Timer
     timerRunning: false,
@@ -126,6 +135,8 @@
     btnSelectNone: document.getElementById('btnSelectNone'),
     chkLearnTimer: document.getElementById('chkLearnTimer'),
     btnStartLearn: document.getElementById('btnStartLearn'),
+    btnLearnChoice: document.getElementById('btnLearnChoice'),
+    btnLearnNumpad: document.getElementById('btnLearnNumpad'),
     
     // Game HUD & Elements
     levelStatusBar: document.getElementById('levelStatusBar'),
@@ -153,6 +164,12 @@
     padBackspace: document.getElementById('padBackspace'),
     padEnter: document.getElementById('padEnter'),
     
+    // Joker
+    jokerContainer: document.getElementById('jokerContainer'),
+    btnJoker: document.getElementById('btnJoker'),
+    jokerText: document.getElementById('jokerText'),
+    jokerBadge: document.getElementById('jokerBadge'),
+
     // Game Over
     gameoverPraiseTitle: document.getElementById('gameoverPraiseTitle'),
     gameoverPraiseDesc: document.getElementById('gameoverPraiseDesc'),
@@ -193,6 +210,10 @@
     valSoundVolume: document.getElementById('valSoundVolume'),
     cfgMusicVolume: document.getElementById('cfgMusicVolume'),
     valMusicVolume: document.getElementById('valMusicVolume'),
+    cfgStartJokers: document.getElementById('cfgStartJokers'),
+    valStartJokers: document.getElementById('valStartJokers'),
+    cfgJokerInterval: document.getElementById('cfgJokerInterval'),
+    valJokerInterval: document.getElementById('valJokerInterval'),
     btnResetSettings: document.getElementById('btnResetSettings'),
     btnSaveSettings: document.getElementById('btnSaveSettings'),
     btnCloseSettings: document.getElementById('btnCloseSettings'),
@@ -296,14 +317,29 @@
   }
 
   // ==================== SPIEL-LOGIK & BERECHNUNGEN ====================
+  function isChoiceMode() {
+    return state.mode === 'easy' || (state.mode === 'learn' && state.learnInputMode === 'choice');
+  }
+
+  function isJokerAllowed() {
+    if (state.mode === 'hardcore') return false;
+    if (state.mode === 'learn' && !state.learnHasTimer) return false;
+    return true;
+  }
+
   function startGame(mode) {
     state.mode = mode;
     state.streak = 0;
     state.currentInput = '';
+    state.jokersLeft = state.settings.startJokers !== undefined ? state.settings.startJokers : 3;
+    state.tasksSinceLastJoker = 0;
+    state.jokerUsedOnCurrentTask = false;
+    state.timerFrozen = false;
+    if (dom.timerBar) dom.timerBar.classList.remove('frozen');
     stopTimer();
 
     // Layout je nach Modus anpassen
-    if (mode === 'easy') {
+    if (isChoiceMode()) {
       dom.choiceContainer.style.display = 'grid';
       dom.numpadContainer.style.display = 'none';
     } else {
@@ -319,6 +355,7 @@
       dom.timerContainer.style.visibility = 'visible';
     }
 
+    updateJokerDisplay();
     updateHud();
     showScreen('game');
     nextProblem();
@@ -405,6 +442,9 @@
 
     state.currentProblem = { a, b, answer, choices };
     state.currentInput = '';
+    state.jokerUsedOnCurrentTask = false;
+    state.timerFrozen = false;
+    if (dom.timerBar) dom.timerBar.classList.remove('frozen');
 
     // UI aktualisieren
     dom.numA.textContent = a;
@@ -414,9 +454,11 @@
     dom.feedbackMsg.textContent = '';
     dom.questionCard.classList.remove('shake');
 
-    if (state.mode === 'easy') {
+    if (isChoiceMode()) {
       renderChoices(choices);
     }
+
+    updateJokerDisplay();
 
     // Timer starten
     startTimer();
@@ -482,6 +524,8 @@
 
   function startTimer() {
     stopTimer(); // Vorherigen Timer-Frame stoppen
+    state.timerFrozen = false;
+    if (dom.timerBar) dom.timerBar.classList.remove('frozen');
     state.allocatedTime = calculateAllocatedTime();
     state.remainingTime = state.allocatedTime;
     state.timerLastTimestamp = performance.now();
@@ -535,6 +579,11 @@
       return;
     }
 
+    if (state.timerFrozen) {
+      dom.hudTimeLeft.textContent = '❄️ PAUSE';
+      return;
+    }
+
     const pct = Math.max(0, Math.min(100, (state.remainingTime / state.allocatedTime) * 100));
     dom.timerBar.style.width = `${pct}%`;
     dom.hudTimeLeft.textContent = state.remainingTime.toFixed(1) + 's';
@@ -545,6 +594,62 @@
       dom.timerBar.className = 'timer-bar warning';
     } else {
       dom.timerBar.className = 'timer-bar';
+    }
+  }
+
+  // ==================== JOKER: ZEIT ANHALTEN ====================
+  function useJoker() {
+    if (!isJokerAllowed()) return;
+    if (state.jokersLeft <= 0 || state.jokerUsedOnCurrentTask || state.timerFrozen) return;
+    if (!state.timerRunning && (state.mode !== 'learn' || state.learnHasTimer)) return;
+
+    state.jokersLeft--;
+    state.jokerUsedOnCurrentTask = true;
+    state.timerFrozen = true;
+
+    stopTimer(); // Timer sicher pausieren
+
+    if (dom.timerBar) dom.timerBar.classList.add('frozen');
+    dom.hudTimeLeft.textContent = '❄️ PAUSE';
+
+    window.audio.playFreeze();
+    updateJokerDisplay();
+  }
+
+  function updateJokerDisplay() {
+    if (!dom.jokerContainer) return;
+    if (!isJokerAllowed()) {
+      dom.jokerContainer.style.display = 'none';
+      return;
+    }
+    dom.jokerContainer.style.display = 'block';
+
+    if (dom.jokerBadge) dom.jokerBadge.textContent = state.jokersLeft;
+
+    if (state.timerFrozen) {
+      dom.btnJoker.disabled = true;
+      dom.btnJoker.classList.add('active-freeze');
+      dom.jokerText.textContent = '❄️ Zeit angehalten!';
+    } else if (state.jokerUsedOnCurrentTask) {
+      dom.btnJoker.disabled = true;
+      dom.btnJoker.classList.remove('active-freeze');
+      dom.jokerText.textContent = 'Joker für Aufgabe aktiv';
+    } else if (state.jokersLeft <= 0) {
+      dom.btnJoker.disabled = true;
+      dom.btnJoker.classList.remove('active-freeze');
+      dom.jokerText.textContent = 'Keine Joker übrig';
+    } else {
+      dom.btnJoker.disabled = false;
+      dom.btnJoker.classList.remove('active-freeze');
+      dom.jokerText.textContent = 'Joker: Zeit anhalten';
+    }
+  }
+
+  function triggerJokerReward() {
+    window.audio.playJokerEarned();
+    if (dom.btnJoker) {
+      dom.btnJoker.classList.add('reward-pulse');
+      setTimeout(() => dom.btnJoker.classList.remove('reward-pulse'), 700);
     }
   }
 
@@ -574,7 +679,7 @@
     checkAnswer(num);
   }
 
-  function checkAnswer(userAnswer) {
+  function checkAnswer(userAnswer, btnElement = null) {
     if (!state.currentProblem) return;
     const correct = state.currentProblem.answer;
 
@@ -582,6 +687,18 @@
       // RICHTIG!
       state.streak++;
       updateHud();
+
+      // Joker Belohnung bei Meilenstein
+      if (isJokerAllowed()) {
+        state.tasksSinceLastJoker++;
+        const jInterval = state.settings.jokerInterval || 10;
+        if (state.tasksSinceLastJoker >= jInterval) {
+          state.tasksSinceLastJoker = 0;
+          state.jokersLeft++;
+          updateJokerDisplay();
+          triggerJokerReward();
+        }
+      }
 
       const interval = state.settings.stepInterval || 5;
       const isLevelUp = (state.streak > 0 && state.streak % interval === 0 && state.mode !== 'learn');
@@ -594,7 +711,8 @@
       } else {
         window.audio.playCorrect();
         triggerConfetti(25);
-        dom.feedbackMsg.textContent = 'Richtig! ⭐';
+        const rewardText = (state.tasksSinceLastJoker === 0 && isJokerAllowed()) ? 'Richtig! ⭐ +1 Joker! ❄️' : 'Richtig! ⭐';
+        dom.feedbackMsg.textContent = rewardText;
         dom.feedbackMsg.style.color = 'var(--accent-green)';
         
         // Kurze visuelle Pause für gutes Gefühl
@@ -615,6 +733,9 @@
         state.currentInput = '';
         dom.answerPlaceholder.textContent = '?';
         dom.answerPlaceholder.classList.remove('has-val');
+        if (btnElement) {
+          btnElement.classList.add('wrong');
+        }
       } else {
         // Sudden Death in Arcade-Modi!
         stopTimer();
@@ -826,6 +947,12 @@
     dom.cfgMusicVolume.value = cfg.musicVolume;
     dom.valMusicVolume.textContent = `${Math.round(cfg.musicVolume * 100)}%`;
 
+    dom.cfgStartJokers.value = cfg.startJokers !== undefined ? cfg.startJokers : 3;
+    dom.valStartJokers.textContent = `${dom.cfgStartJokers.value} Joker`;
+
+    dom.cfgJokerInterval.value = cfg.jokerInterval !== undefined ? cfg.jokerInterval : 10;
+    dom.valJokerInterval.textContent = `${dom.cfgJokerInterval.value} Aufgaben`;
+
     dom.modalSettings.classList.add('active');
   }
 
@@ -842,6 +969,8 @@
     state.settings.stepReduction = parseFloat(dom.cfgStepReduction.value);
     state.settings.sfxVolume = parseFloat(dom.cfgSoundVolume.value);
     state.settings.musicVolume = parseFloat(dom.cfgMusicVolume.value);
+    state.settings.startJokers = parseInt(dom.cfgStartJokers.value, 10);
+    state.settings.jokerInterval = parseInt(dom.cfgJokerInterval.value, 10);
 
     window.audio.setVolumes(state.settings.sfxVolume, state.settings.musicVolume);
     saveSettings();
@@ -973,6 +1102,36 @@
     });
 
     // Lernmodus Setup
+    function updateLearnModeToggle() {
+      if (!dom.btnLearnChoice || !dom.btnLearnNumpad) return;
+      if (state.learnInputMode === 'choice') {
+        dom.btnLearnChoice.classList.add('active');
+        dom.btnLearnNumpad.classList.remove('active');
+      } else {
+        dom.btnLearnChoice.classList.remove('active');
+        dom.btnLearnNumpad.classList.add('active');
+      }
+    }
+    updateLearnModeToggle();
+
+    if (dom.btnLearnChoice) {
+      dom.btnLearnChoice.addEventListener('click', () => {
+        window.audio.playClick();
+        state.learnInputMode = 'choice';
+        localStorage.setItem('1x1_learn_input_mode', 'choice');
+        updateLearnModeToggle();
+      });
+    }
+
+    if (dom.btnLearnNumpad) {
+      dom.btnLearnNumpad.addEventListener('click', () => {
+        window.audio.playClick();
+        state.learnInputMode = 'numpad';
+        localStorage.setItem('1x1_learn_input_mode', 'numpad');
+        updateLearnModeToggle();
+      });
+    }
+
     dom.btnSelectAll.addEventListener('click', () => {
       window.audio.playClick();
       state.learnSelectedTables = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -991,13 +1150,20 @@
       startGame('learn');
     });
 
-    // Multiple Choice Buttons (Leicht)
+    // Multiple Choice Buttons (Leicht & Lernmodus)
     dom.choiceContainer.querySelectorAll('.choice-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const val = parseInt(btn.dataset.val, 10);
-        checkAnswer(val);
+        checkAnswer(val, btn);
       });
     });
+
+    // Joker Button
+    if (dom.btnJoker) {
+      dom.btnJoker.addEventListener('click', () => {
+        useJoker();
+      });
+    }
 
     // On-Screen Numpad Buttons (Normal & Hardcore)
     dom.numpadContainer.querySelectorAll('.pad-btn[data-val]').forEach(btn => {
@@ -1077,6 +1243,13 @@
     dom.cfgMusicVolume.addEventListener('input', (e) => {
       dom.valMusicVolume.textContent = `${Math.round(e.target.value * 100)}%`;
     });
+    dom.cfgStartJokers.addEventListener('input', (e) => {
+      dom.valStartJokers.textContent = `${e.target.value} Joker`;
+    });
+    dom.cfgJokerInterval.addEventListener('input', (e) => {
+      dom.valJokerInterval.textContent = `${e.target.value} Aufgaben`;
+    });
+
     // App-Update per Klick im Einstellungsmenü
     const btnUpdateApp = document.getElementById('btnUpdateApp');
     if (btnUpdateApp) {
@@ -1093,10 +1266,11 @@
     }
 
     // Changelog & Versionsanzeige einmalig nach Versionswechsel
-    const CURRENT_VERSION = '1.2';
+    const CURRENT_VERSION = '1.3';
     const CHANGELOG_NOTES = `
-      <li>Timerfehler behoben</li>
-      <li>Sammy ist eine böse Katze 🐱</li>
+      <li>❄️ <strong>Neu: Joker-Funktion!</strong> Hält den Timer für schwere Aufgaben an.</li>
+      <li>🟢 <strong>Lernmodus mit 4 Antworten:</strong> Jetzt auch mit Multiple-Choice spielbar!</li>
+      <li>⚙️ <strong>Neue Joker-Einstellungen:</strong> Startanzahl & Nachschub im Menü anpassbar.</li>
     `;
 
     const changelogTitle = document.getElementById('changelogTitle');
@@ -1155,14 +1329,20 @@
       // Nur im Spiel relevant:
       if (state.screen !== 'game') return;
 
+      // Joker per Taste 'J'
+      if (e.key === 'j' || e.key === 'J') {
+        useJoker();
+        return;
+      }
+
       // Zifferntasten 0-9 (auch Numpad!)
       if (e.key >= '0' && e.key <= '9') {
-        if (state.mode === 'easy') {
-          // Im Leicht-Modus: Tasten 1, 2, 3, 4 wählen die jeweilige Karte
+        if (isChoiceMode()) {
+          // Im 4-Antworten-Modus: Tasten 1, 2, 3, 4 wählen die jeweilige Karte
           const idx = parseInt(e.key, 10) - 1;
           const choiceBtns = dom.choiceContainer.querySelectorAll('.choice-btn');
           if (idx >= 0 && idx < choiceBtns.length) {
-            checkAnswer(parseInt(choiceBtns[idx].dataset.val, 10));
+            checkAnswer(parseInt(choiceBtns[idx].dataset.val, 10), choiceBtns[idx]);
           }
         } else {
           // Im Normal / Hardcore Modus: Ziffer ins Eingabefeld

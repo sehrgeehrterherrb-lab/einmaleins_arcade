@@ -124,6 +124,14 @@
       </div>
 
       <div class="setup-options">
+        <div class="setup-opt-row">
+          <span class="setup-opt-label">Eingabemodus:</span>
+          <div class="learn-mode-toggle">
+            <button type="button" class="learn-toggle-btn active" id="btnLearnChoice">🟢 4 Antworten</button>
+            <button type="button" class="learn-toggle-btn" id="btnLearnNumpad">🔢 Selbst tippen</button>
+          </div>
+        </div>
+
         <label class="toggle-container">
           <input type="checkbox" id="chkLearnTimer">
           <span class="toggle-slider"></span>
@@ -220,6 +228,15 @@
           <button class="pad-btn" data-val="0">0</button>
           <button class="pad-btn pad-enter" id="padEnter" title="Bestätigen" aria-label="Bestätigen">✓</button>
         </div>
+      </div>
+
+      <!-- JOKER BUTTON (ZEIT ANHALTEN) -->
+      <div class="joker-container" id="jokerContainer">
+        <button class="joker-btn" id="btnJoker" type="button">
+          <span class="joker-icon">❄️</span>
+          <span class="joker-text" id="jokerText">Joker: Zeit anhalten</span>
+          <span class="joker-badge" id="jokerBadge">3</span>
+        </button>
       </div>
     </main>
 
@@ -352,6 +369,24 @@
               </div>
             </div>
           </div>
+
+          <div class="setting-group">
+            <h3>❄️ Joker-Einstellungen</h3>
+            <div class="setting-row">
+              <label for="cfgStartJokers">Start-Joker:</label>
+              <div class="slider-control">
+                <input type="range" id="cfgStartJokers" min="0" max="10" step="1" value="3">
+                <span class="value-display" id="valStartJokers">3 Joker</span>
+              </div>
+            </div>
+            <div class="setting-row">
+              <label for="cfgJokerInterval">Zusatz-Joker alle:</label>
+              <div class="slider-control">
+                <input type="range" id="cfgJokerInterval" min="3" max="25" step="1" value="10">
+                <span class="value-display" id="valJokerInterval">10 Aufgaben</span>
+              </div>
+            </div>
+          </div>
 		            <div class="setting-group">
             <h3>🔄 App-Update</h3>
             <p class="setting-hint">Prüft im WLAN nach neuen Versionen:</p>
@@ -371,14 +406,14 @@
     <div id="modalChangelog" class="modal">
       <div class="modal-dialog">
         <div class="modal-header">
-          <h2 id="changelogTitle">✨ Was ist neu in v1.2?</h2>
+          <h2 id="changelogTitle">✨ Was ist neu in v1.3?</h2>
         </div>
         <div style="padding: 18px 20px; line-height: 1.6; font-size: 0.95rem; color: #cbd5e1;">
           <p style="margin-bottom: 8px;"><strong>Folgende Neuerungen sind live:</strong></p>
           <ul id="changelog" style="padding-left: 20px; margin-bottom: 12px;">
-            <li>Versionsanzeige (v1.1) hinzugefügt</li>
-            <li>Neuer Button „Jetzt aktualisieren“ in den Einstellungen</li>
-            <li>Automatisches Leeren des alten Caches</li>
+            <li>❄️ <strong>Neu: Joker-Funktion!</strong> Hält den Timer für schwere Aufgaben an.</li>
+            <li>🟢 <strong>Lernmodus mit 4 Antworten:</strong> Jetzt auch mit Multiple-Choice spielbar!</li>
+            <li>⚙️ <strong>Neue Joker-Einstellungen:</strong> Startanzahl & Nachschub im Menü anpassbar.</li>
           </ul>
         </div>
         <div class="modal-footer">
@@ -414,7 +449,7 @@
         </div>
       </div>
     </div>
-      <div id="appVersion" style="text-align: right; font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">v1.1</div>
+      <div id="appVersion" style="text-align: right; font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">v1.3</div>
   </div>
 
   <script src="qrcode.min.js"></script>
