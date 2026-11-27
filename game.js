@@ -45,21 +45,35 @@
     ]
   };
 
-  // ==================== COOLE RANG-NAMEN & LEVEL ====================
+  // ==================== COOLE RANG-NAMEN & LEVEL (20 STUFEN) ====================
   const LEVEL_RANKS = [
-    { level: 1, name: 'Rechen-Rookie', icon: '🟢', color: '#10b981' },
-    { level: 2, name: 'Blitz-Rechner', icon: '⚡', color: '#00e5ff' },
-    { level: 3, name: 'Zahlen-Ninja', icon: '🥋', color: '#9d4edd' },
-    { level: 4, name: 'Turbo-Brain', icon: '🚀', color: '#ffb703' },
-    { level: 5, name: 'Arcade-Champion', icon: '👑', color: '#f72585' },
-    { level: 6, name: 'Mathe-Titan', icon: '🔥', color: '#ef4444' }
+    { level: 1,  name: 'Rechen-Schnecke',    icon: '🐌', color: '#94a3b8' },
+    { level: 2,  name: 'Rechen-Kartoffel',   icon: '🥔', color: '#a8a29e' },
+    { level: 3,  name: 'Finger-Zähler',      icon: '🖐️', color: '#d6d3d1' },
+    { level: 4,  name: 'Mathe-Faultier',     icon: '🦥', color: '#a3e635' },
+    { level: 5,  name: 'Rechen-Rookie',      icon: '🟢', color: '#10b981' },
+    { level: 6,  name: 'Zahlen-Küken',       icon: '🐣', color: '#34d399' },
+    { level: 7,  name: 'Schlauer Fuchs',     icon: '🦊', color: '#fb923c' },
+    { level: 8,  name: 'Zahlen-Jäger',       icon: '🎯', color: '#38bdf8' },
+    { level: 9,  name: 'Blitz-Rechner',      icon: '⚡', color: '#00e5ff' },
+    { level: 10, name: 'Zahlen-Ninja',       icon: '🥋', color: '#a855f7' },
+    { level: 11, name: 'Zahlen-Gepard',      icon: '🐆', color: '#facc15' },
+    { level: 12, name: 'Mathe-Ritter',       icon: '🛡️', color: '#60a5fa' },
+    { level: 13, name: 'Zahlen-Magier',      icon: '🧙', color: '#c084fc' },
+    { level: 14, name: 'Turbo-Brain',        icon: '🚀', color: '#ffb703' },
+    { level: 15, name: 'Rechen-Cyborg',      icon: '🤖', color: '#22d3ee' },
+    { level: 16, name: 'Zahlen-Drache',      icon: '🐉', color: '#f97316' },
+    { level: 17, name: 'Arcade-Champion',    icon: '👑', color: '#f72585' },
+    { level: 18, name: 'Einmaleins-Legende', icon: '💎', color: '#38bdf8' },
+    { level: 19, name: 'Galaxie-Gehirn',     icon: '🌌', color: '#818cf8' },
+    { level: 20, name: 'Mathe-Titan',        icon: '🔥', color: '#ef4444' }
   ];
 
   function getRankForLevel(lvl) {
-    if (lvl >= 6) {
+    if (lvl >= 20) {
       return { 
         level: lvl, 
-        name: lvl === 6 ? 'Mathe-Titan' : `Titan (Gottmodus +${lvl - 6})`, 
+        name: lvl === 20 ? 'Mathe-Titan' : `Titan (Gottmodus +${lvl - 20})`, 
         icon: '🔥', 
         color: '#ef4444' 
       };
@@ -900,8 +914,40 @@
       btn.classList.toggle('active', btn.dataset.tab === tabName);
     });
 
-    const list = state.highscores[tabName] || [];
     dom.leaderboardList.innerHTML = '';
+    const interval = state.settings.stepInterval || 5;
+
+    // Spezial-Tab: Übersicht aller 20 Level-Ränge
+    if (tabName === 'ranks') {
+      if (dom.btnClearHighscores) dom.btnClearHighscores.style.display = 'none';
+
+      LEVEL_RANKS.forEach((rank) => {
+        const minTasks = (rank.level - 1) * interval;
+        const row = document.createElement('div');
+        row.className = 'rank-row' + (rank.level === 20 ? ' rank-titan' : '');
+        row.innerHTML = `
+          <span class="rank-lvl-pill" style="background: ${rank.color}">LVL ${rank.level}</span>
+          <span class="rank-title">${rank.icon} ${rank.name}</span>
+          <span class="rank-req">ab ${minTasks} Aufg.</span>
+        `;
+        dom.leaderboardList.appendChild(row);
+      });
+
+      // Hinweis für Endlos-Stufen ab Level 21
+      const godRow = document.createElement('div');
+      godRow.className = 'rank-row rank-titan';
+      godRow.innerHTML = `
+        <span class="rank-lvl-pill" style="background: #ef4444; color: #fff">LVL 21+</span>
+        <span class="rank-title">🔥 Titan (Gottmodus +1, +2…)</span>
+        <span class="rank-req">ab ${20 * interval}+</span>
+      `;
+      dom.leaderboardList.appendChild(godRow);
+      return;
+    }
+
+    if (dom.btnClearHighscores) dom.btnClearHighscores.style.display = '';
+
+    const list = state.highscores[tabName] || [];
 
     if (list.length === 0) {
       dom.leaderboardList.innerHTML = '<div class="lb-empty">Noch keine Rekorde eingetragen.<br>Spiele eine Runde und sei der Erste! 🚀</div>';
@@ -915,10 +961,15 @@
       
       const medals = ['🥇', '🥈', '🥉'];
       const rankDisplay = medals[idx] || `#${idx + 1}`;
+      const achievedLvl = Math.floor(item.score / interval) + 1;
+      const achievedRank = getRankForLevel(achievedLvl);
 
       row.innerHTML = `
         <span class="lb-rank">${rankDisplay}</span>
-        <span class="lb-name">${item.name}</span>
+        <div class="lb-name-wrap">
+          <span class="lb-name">${item.name}</span>
+          <span class="lb-subrank" style="color: ${achievedRank.color}">LVL ${achievedRank.level} • ${achievedRank.icon} ${achievedRank.name}</span>
+        </div>
         <span class="lb-score">${item.score} <small style="font-size:0.75rem; color:var(--text-muted)">Serie</small></span>
       `;
       dom.leaderboardList.appendChild(row);
@@ -1266,11 +1317,10 @@
     }
 
     // Changelog & Versionsanzeige einmalig nach Versionswechsel
-    const CURRENT_VERSION = '1.3';
+    const CURRENT_VERSION = '1.4';
     const CHANGELOG_NOTES = `
-      <li>❄️ <strong>Neu: Joker-Funktion!</strong> Hält den Timer für schwere Aufgaben an.</li>
-      <li>🟢 <strong>Lernmodus mit 4 Antworten:</strong> Jetzt auch mit Multiple-Choice spielbar!</li>
-      <li>⚙️ <strong>Neue Joker-Einstellungen:</strong> Startanzahl & Nachschub im Menü anpassbar.</li>
+      <li>🏆 <strong>20 neue Level-Ränge:</strong> Von der Rechen-Schnecke 🐌 bis zum Mathe-Titan 🔥!</li>
+      <li>🏅 <strong>Rang-Übersicht in der Bestenliste:</strong> Neuer Tab „Ränge“ zeigt alle Level & Aufgaben auf einen Blick.</li>
     `;
 
     const changelogTitle = document.getElementById('changelogTitle');
